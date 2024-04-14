@@ -6,8 +6,6 @@ const quizRouter = express.Router();
 quizRouter.get('/:course_id', (req, res) => {
     const { course_id } = req.params;
 
-    console.log(course_id)
-
     const quizzes = database.quizzes.filter((q) => {
         return q.course === course_id
     })
@@ -28,12 +26,12 @@ quizRouter.post('/:course_id', (req, res) => {
 
     database.quizzes.append(newQuiz);
 
-    res.json({quizzes: newQuiz});
+    res.json({quiz: newQuiz});
 })
 
 quizRouter.patch('/:course_id/:quiz_id/publish', (req, res) => {
     const { course_id, quiz_id } = req.params;
-    const newBool = res.body.publish;
+    const { publish: newBool } = res.body;
 
     database.quizzes = database.quizzes.map(q => {
         if (course_id === q.course && quiz_id === q.quiz_id) {
@@ -45,11 +43,10 @@ quizRouter.patch('/:course_id/:quiz_id/publish', (req, res) => {
     res.json({status: '200'})
 })
 
-quizRouter.post('/:course_id/:quiz_id', (req, res) => {
-    const { course_id, quiz_id } = req.params;
-    const { new_course_id } = req.query;
-    const quiz = { ...req.body.quiz, course: new_course_id };
-
+quizRouter.post('/:course_id/:quiz_id/copy', (req, res) => {
+    const { new_course_id } = req.body;
+    const { quiz_id } = req.params;
+    const quiz = { ...database.quizzes.find(q => q.quiz_id === quiz_id), course: new_course_id };
 
     database.quizzes.append(quiz);
 
@@ -67,7 +64,7 @@ quizRouter.delete('/:course_id/:quiz_id', (req, res) => {
         return true;
     })
 
-    res.json({code: "200"});
+    res.json({status: "200"});
 })
 
 quizRouter.patch('/:course_id/:quiz_id', (req, res) => {
