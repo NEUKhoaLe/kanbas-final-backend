@@ -1,8 +1,9 @@
+import { Mongoose } from "mongoose";
 import model from "./model.js";
+import { Types } from "mongoose";
 export const createQuiz = async (quiz) => {
-  delete quiz._id;
-  const newQuiz = await model.create(quiz);
-  return newQuiz;
+  quiz = { ...quiz, _id: new Types.ObjectId() };
+  return await model.create(quiz);
 };
 export const findQuizzesForCourseId = (courseId) => model.find({ course: courseId });
 export const updateQuizPublish = (quizId, publish) => model.updateOne({ _id: quizId }, { $set: { publish } });

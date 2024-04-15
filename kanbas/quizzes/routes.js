@@ -32,7 +32,7 @@ quizRouter.post('/:course_id', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       status: "500",
-      message: "Internal server error occurred while creating a new quiz."
+      message: "Internal server error occurred while creating a new quiz.",
     });
   }
 });

@@ -18,15 +18,15 @@ const QuizDetailsSchema = new mongoose.Schema({
   one_question: { type: Boolean, default: false },
   webcam: { type: Boolean, default: false },
   lock_question: { type: Boolean, default: false },
-  available_date: { type: Date },
-  until_date: { type: Date },
+  available_date: { type: Date, required: true },
+  until_date: { type: Date, required: true },
 });
 
 const QuizQuestionSchema = new mongoose.Schema({
   question_number: { type: Number, required: true },
   question_type: { type: String, required: true },
   question_description: { type: String, required: true },
-  question_choices: [{ type: String }],
+  question_choices: [String],
 });
 
 const QuizAnswerSchema = new mongoose.Schema({
@@ -35,7 +35,7 @@ const QuizAnswerSchema = new mongoose.Schema({
 });
 
 const QuizSchema = new mongoose.Schema({
-  _id: { type: mongoose.Schema.Types.ObjectId, required: true, auto: true },
+  _id: { type: mongoose.Schema.Types.ObjectId, required: true },
   name: { type: String, required: true },
   course: { type: String, required: true },
   publish: { type: Boolean, required: true },
