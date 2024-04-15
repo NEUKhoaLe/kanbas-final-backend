@@ -1,7 +1,7 @@
 export default [{
+    _id: "1",
     name: "quiz",
-    course: "RS101",
-    quiz_id: 1,
+    course: "RS102",
     publish: true,
     assign_to: [
         {

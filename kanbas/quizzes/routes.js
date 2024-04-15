@@ -1,87 +1,147 @@
 import express from "express";
-import database from "../database/index.js";
+import * as dao from "./dao.js";
 
 const quizRouter = express.Router();
 
-quizRouter.get('/:course_id', (req, res) => {
-    const { course_id } = req.params;
-
-    console.log(course_id)
-
-    const quizzes = database.quizzes.filter((q) => {
-        return q.course === course_id
-    })
-
-    console.log(database.quizzes)
-    console.log(quizzes)
-
-    res.json({quizzes: quizzes});
+// gets all quizzes for a course with the given course_id
+quizRouter.get('/:course_id', async (req, res) => {
+  const { course_id } = req.params;
+  try {
+      const quizzes = await dao.findQuizzesForCourseId(course_id);
+      res.json({ quizzes: quizzes });
+  } catch (error) {
+      res.status(500).json({
+          status: "500",
+          message: "Internal server error while fetching quizzes."
+      });
+  }
 });
 
-quizRouter.post('/:course_id', (req, res) => {
-    const { course_id } = req.params;
-    const quiz = req.body.quiz;
-    const newQuiz = {
-        ...quiz,
-        course: course_id,
-    }
 
-    database.quizzes.append(newQuiz);
+// creates a new quiz for a course with the given course_id
+quizRouter.post('/:course_id', async (req, res) => {
+  const { course_id } = req.params;
+  const quiz = {
+      ...req.body.quiz,
+      course: course_id,
+  };
 
-    res.json({quizzes: newQuiz});
-})
-
-quizRouter.patch('/:course_id/:quiz_id/publish', (req, res) => {
-    const { course_id, quiz_id } = req.params;
-    const newBool = res.body.publish;
-
-    database.quizzes = database.quizzes.map(q => {
-        if (course_id === q.course && quiz_id === q.quiz_id) {
-            return {...q, publish: newBool }
-        }
-        return q;
-    })
-
-    res.json({status: '200'})
-})
-
-quizRouter.post('/:course_id/:quiz_id', (req, res) => {
-    const { course_id, quiz_id } = req.params;
-    const { new_course_id } = req.query;
-    const quiz = { ...req.body.quiz, course: new_course_id };
+  try {
+      const newQuiz = await dao.createQuiz(quiz);
+      res.json({ quiz: newQuiz });
+  } catch (error) {
+      res.status(500).json({
+          status: "500",
+          message: "Internal server error occurred while creating a new quiz."
+      });
+  }
+});
 
 
-    database.quizzes.append(quiz);
+// publishes/unpublishes a quiz with the given quiz_id
+quizRouter.patch('/:course_id/:quiz_id/publish', async (req, res) => {
+  const { quiz_id } = req.params;
+  const newBool = req.body.publish;
 
-    res.json({quiz: quiz});
-})
+  try {
+      const response = await dao.updateQuizPublish(quiz_id, newBool);
 
-quizRouter.delete('/:course_id/:quiz_id', (req, res) => {
-    const { course_id, quiz_id } = req.params;
+      if (response.acknowledged && response.modifiedCount == 1) {
+          res.status(200).json({ status: '200', message: 'Quiz updated successfully.' });
+      } else {
+          res.status(500).json({ status: '500', message: 'Failed to update quiz.' });
+      }
+  } catch (error) {
+      res.status(500).json({ status: '500', message: 'Server error occurred.' });
+  }
+});
 
-    database.quizzes = database.quizzes.filter(q => {
-        if (course_id === q.course) {
-            return quiz_id !== q.quiz_id;
-        }
+// copies a quiz with the given quiz_id to a new course with the given new_course_id
+quizRouter.post('/:course_id/:quiz_id/copy', async (req, res) => {
+  const { quiz_id } = req.params;
+  const { new_course_id } = req.body;
 
-        return true;
-    })
+  try {
+      const originalQuiz = await dao.findQuizById(quiz_id);
+      if (!originalQuiz) {
+          return res.status(404).json({
+              status: "404",
+              message: "Original quiz not found."
+          });
+      }
 
-    res.json({code: "200"});
-})
+      const newQuizData = originalQuiz.toObject();
+      newQuizData.course = new_course_id;
+      delete newQuizData._id;
 
-quizRouter.patch('/:course_id/:quiz_id', (req, res) => {
-    const { course_id, quiz_id } = req.params;
-    const newQuiz = res.body.quiz;
+      const newQuiz = await dao.createQuiz(newQuizData);
+      res.status(201).json({
+          status: "201",
+          message: "Quiz successfully copied.",
+          quiz: newQuiz
+      });
+  } catch (error) {
+      res.status(500).json({
+          status: "500",
+          message: "Internal server error occurred while copying the quiz."
+      });
+  }
+});
 
-    database.quizzes = database.quizzes.map(q => {
-        if (course_id === q.course && quiz_id === q.quiz_id) {
-            return {...q, ...newQuiz }
-        }
-        return q;
-    })
+// deletes a quiz with the given quiz_id
+quizRouter.delete('/:course_id/:quiz_id', async (req, res) => {
+  const { quiz_id } = req.params;
 
-    res.json({quiz: newQuiz});
-})
+  try {
+      const result = await dao.deleteQuiz(quiz_id);
+
+      if (result.deletedCount === 0) {
+          return res.status(404).json({
+              status: "404",
+              message: "No quiz found with the provided ID."
+          });
+      }
+
+      res.status(200).json({
+          status: "200",
+          message: "Quiz successfully deleted."
+      });
+  } catch (error) {
+      res.status(500).json({
+          status: "500",
+          message: "Failed to delete the quiz due to an internal error."
+      });
+  }
+});
+
+// updates a quiz with the given quiz_id
+quizRouter.patch('/:course_id/:quiz_id', async (req, res) => {
+  const { quiz_id } = req.params;
+
+  try {
+      const updatedQuiz = await dao.updateQuiz(quiz_id, req.body.quiz);
+      
+      if (updatedQuiz.matchedCount === 0) {
+          return res.status(404).json({
+              status: "404",
+              message: "No quiz found with the provided ID."
+          });
+      }
+      if (updatedQuiz.modifiedCount === 0) {
+          return res.status(500).json({
+              status: "500",
+              message: "Failed to update quiz."
+          });
+      }
+
+      res.json({ quiz: updatedQuiz });
+  } catch (error) {
+      res.status(500).json({
+          status: "500",
+          message: "Internal server error occurred while updating the quiz."
+      });
+  }
+});
+
 
 export default quizRouter;
