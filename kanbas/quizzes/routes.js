@@ -31,7 +31,7 @@ quizRouter.patch('/:course_id/:quiz_id/publish', async (req, res) => {
 
   const response = await dao.updateQuizPublish(quiz_id, newBool);
 
-  if (response.acknowledged && response.modifiedCount == 1) {
+  if (response.acknowledged && response.matchedCount == 1) {
     res.status(200).json({ status: '200', message: 'Quiz updated successfully.' });
   } else {
     res.status(500).json({ status: '500', message: 'Failed to update quiz.' });
@@ -92,12 +92,6 @@ quizRouter.patch('/:course_id/:quiz_id', async (req, res) => {
     return res.status(404).json({
       status: "404",
       message: "No quiz found with the provided ID."
-    });
-  }
-  if (updatedQuiz.modifiedCount === 0) {
-    return res.status(500).json({
-      status: "500",
-      message: "Failed to update quiz."
     });
   }
 
