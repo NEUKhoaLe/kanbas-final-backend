@@ -9,7 +9,6 @@ const AssignToSchema = new mongoose.Schema({
 const QuizDetailsSchema = new mongoose.Schema({
   quiz_type: { type: String, required: true },
   description: { type: String, default: "" },
-  total_points: { type: Number, required: true },
   assignment_group: { type: String, required: true },
   shuffle_answers: { type: Boolean, default: true },
   time_limit: { type: Number, default: 20 },
