@@ -23,16 +23,18 @@ const QuizDetailsSchema = new mongoose.Schema({
   until_date: { type: Date, required: true },
 });
 
+const QuizQuestionChoicesSchema = new mongoose.Schema( {
+  name: { type: String, required: true },
+  isCorrect: {type: Boolean, required: true},
+})
+
 const QuizQuestionSchema = new mongoose.Schema({
   question_number: { type: Number, required: true },
   question_type: { type: String, required: true },
   question_description: { type: String, required: true },
-  question_choices: [String],
-});
-
-const QuizAnswerSchema = new mongoose.Schema({
-  question_number: { type: Number, required: true },
-  answer: { type: String, required: true },
+  question_choices: [QuizQuestionChoicesSchema],
+  question_title: { type: String, required: true },
+  question_points: { type: Number, required: true },
 });
 
 const QuizSchema = new mongoose.Schema({
@@ -43,6 +45,5 @@ const QuizSchema = new mongoose.Schema({
   assign_to: [AssignToSchema],
   details: QuizDetailsSchema,
   questions: [QuizQuestionSchema],
-  answers: [QuizAnswerSchema],
 }, { collection: "quizzes" });
 export default QuizSchema;
