@@ -26,6 +26,9 @@ export default function UserRoutes(app) {
         { message: "Username already taken" });
     }
     await dao.createUser(req.body);
+
+    await new Promise(r => setTimeout(r, 500));
+
     const currentUser = await dao.findUserByUsername(req.body.username);
     req.session["currentUser"] = currentUser;
     req.session.save(err => {
